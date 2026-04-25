@@ -1,0 +1,85 @@
+# Secrets — 절대 커밋 ❌
+.env
+.env.local
+*.key
+secrets/
+config/credentials.json
+
+# KIS API 인증 관련
+kis_token.json
+kis_credentials.*
+
+# 데이터 파일 (대용량, 외부 재현 가능)
+*.db
+*.sqlite
+*.sqlite3
+data/raw/
+data/processed/
+data/cache/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+logs/
+*.log
+
+# Test coverage
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+
+# Backtest 결과 (용량 큼)
+backtest_results/
+*.parquet
+
+# 유튜브 자막 캐시 (대용량)
+youtube_cache/
+transcripts/
+
+# LLM 캐시
+llm_cache/
+*.pkl
+
+# 임시 파일
+tmp/
+temp/
+.tmp/
