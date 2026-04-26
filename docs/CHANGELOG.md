@@ -5,6 +5,148 @@
 
 ---
 
+
+## v3.6 — 2026-04-27
+ 
+**테마: Cold Start with Informative Prior + 조건 라이브러리 시스템 + LLM Leak Defense + 영원한 진화 framing**
+ 
+영상 3개(에너지 안보 / 대장주 / 거래대금) 분석을 통해 도출된 메타 패턴 + 본인 직관(시간 framing, 조건 단위 접근, 라이브러리 vs 진입 조건 분리)을 반영한 대규모 framing 갱신.
+ 
+### 핵심 framing 변화
+ 
+#### 1. 시간 framing — 마감 폐기
+- **§0.2 신규** — 시간 framing: 마감 없음. 프로젝트 ❌, 시스템 ⭕
+- **§12 폐기** — 6주 개발 로드맵 폐기, 영원한 운영 cycle로 대체
+- 시장 진화 → 시스템 진화 일관성
+#### 2. LLM 역할 정정 — Ordinal 분류
+- **§3.2 정정** — LLM 출력은 정량 확률 ❌, ordinal 등급 분류 ⭕
+- 이유: calibration 불가, 한국 시장 prior 빈약
+- 출력 차원: 재료 강도 / 직접성 / 신선도 / 통제성 / 시나리오 가능성 / 심리 / 모멘텀 단계
+- 가중치는 본인 백테스트로 학습
+#### 3. Cold Start Problem 명시
+- **§1.3 신규** — Cold Start Problem 정의 + 본인 자원 조합
+- **§3.5 보강** — Informative prior 접근 단계화 (Phase 1/2/3 prior weight 점진 감쇠)
+- **§7.3 정정** — LLM 자원 우선순위 1순위에 "트레이더 발화 → operational prior 추출" 추가
+#### 4. 메커니즘 → 조건 단위 전환
+- **§4.6 정정** — 메커니즘 단위 ❌, 조건 단위 ⭕
+- 조건 라이브러리가 진짜 자산
+- 메커니즘 = 조건 조합으로 자동 발견
+- Tier 1/2/3 조건 분류 (즉시 검증 가능 / LLM 의존 / 외부 데이터)
+- 조합 탐색: Heuristic search + Bayesian optimization + Multiple testing 보정
+#### 5. 도구함 vs 진입 조건 분리
+- **§4.2 정정** — 조건 라이브러리 (도구함) vs 진입 조건 (실제 매매) 분리
+- 라이브러리 풍부 (30~50개) + 진입 조건 단순 (slot당 3~5개)
+- 영상 함정 ("조건 복잡 → 종목 안 나옴") 회피
+- 동적 기준 도입 (z-score, percentile, 시총 비율 등)
+- 신고가 강도 분류 (history/long/medium/short/rebound)
+- 상폐 시즌 calendar
+#### 6. 가명화 모듈 + LLM Leak Defense
+- **§4.8 신규** — 가명화 모듈 (Level 2 가명화)
+- **§3.6 (c) 재작성** — Shock Simulation + 5-layer Leak Defense
+- 종목명/날짜/수치 치환, 산업/사이즈/카테고리 보존
+- 외부 도구 의존 인정 (오픈소스 NER, AI 도구로 코드 생성, AWS 등)
+- Phase 1: pykrx 사전 매칭 + 정규표현식
+- Phase 2: KLUE-NER 등 한국어 NER
+- Phase 3: AWS/LLM 보조
+- Leak score 자동 계산 + alpha 할인계수
+#### 7. Modular Backtesting
+- **§3.13 신규** — Layer별 단독 백테스트 후 통합
+- Drop-one validation으로 marginal contribution 측정
+- 단순 alpha 합산 금지 (3% + 4% = 7% 추론 ❌)
+- 결합 방식 진화 (Phase A: rule-based AND → Phase B: 가중 점수 → Phase C: stacking)
+#### 8. 시간 자체가 자원
+- **§3.14 신규** — Forward test = 시간 누적
+- Backtest 시기별 신뢰도 차등 (Train/Test/Phase A)
+- Phase A 실거래가 진짜 forward test
+- Backtest vs 실거래 비교로 leak 진단
+#### 9. 외부 트레이더 가설 통합 워크플로우
+- **§7.7 신규** — 6년 검증 트레이더 발화 → 가설 변환 → 검증 → slot 격상
+- 신뢰 트레이더 가중 원칙: 우선순위 ↑, 통과 기준 동일 (신뢰가 검증 대체 ❌)
+- 대시드 ↔ 본인 시드 보정 명시
+#### 10. 메타 요소 추출 자동화
+- **§3.3 보강** — LLM이 메타 요소 *생성*은 가능, *선별*은 사람 필수
+- 본인이 매주 영상 가져와서 LLM에 묻던 작업의 시스템화 가능 부분 명시
+### 데이터 메타데이터 확장
+ 
+#### §3.9 보강 — Megatheme 예외 룰
+- freshness 둔감화 ❌, but is_new_dimension=true 비율 90일 내 3회+ 발생한 클러스터
+- → "megatheme" 플래그, 둔감화 보정 면제
+#### §4.4 메타데이터 신규 차원 6개
+- theme_cluster (테마 클러스터 식별)
+- cluster_density_30d (30일 내 같은 클러스터 재료 수)
+- cluster_acceleration (60일 대비 빈도 증가율)
+- directness (rumored/supply/business/holding)
+- controllability (controllable/semi/uncontrollable)
+- is_megatheme (boolean)
+#### §4.3 Tier 2 feature 추가 (영상에서 추출)
+- 거래대금 / 시가총액 비율 (영상 3)
+- 거래대금 시장 percentile (영상 3)
+- 신고가 강도 분류 (영상 3)
+- 상한가 빈도 ("괴물 종목", 영상 2)
+- 재료 통제성 (영상 3)
+- 재료 직접성 (영상 2)
+- 테마 클러스터 밀도 + 가속도 (영상 1)
+- 테마 회전율 (영상 2)
+#### §4.7 섹터 매트릭스 차원 추가
+- 반등 친화도 (high/medium/low) — 영상 3 지적
+- 바이오는 low_rebound
+### Slot / Layer 5 갱신
+ 
+#### §6.1 Layer 4 신규 — Leak score 측정
+ 
+#### §7.5 적응 메커니즘 영원한 cycle 명시
+- Daily/Weekly/Monthly/Quarterly + Event-triggered
+### 절대 금지 항목 14개 추가 (§10.1)
+ 
+- LLM 정량 확률 출력 요구
+- Historical backtest leak 할인 없이 신뢰
+- 가명화 모듈 quality 검증 없이 백테스트
+- 종목명 직접 LLM 노출
+- 정확한 날짜 LLM 노출
+- 6년 신뢰 트레이더 발화 통과 기준 완화
+- 메커니즘 단위로 가설 검증
+- 진입 시 5개 이상 조건 AND 강제
+- 조건 라이브러리 = 진입 조건 혼동
+- Leak score 무시
+- 단순 layer alpha 합산
+- Test set 보고 결합 방식 변경
+- 가중치 조정 횟수 무제한
+- Multiple testing 보정 없이 다중 가설 채택
+- 기한 압박으로 검증 단축
+### 학술 근거 추가
+ 
+- Bayesian inference with informative prior (cold start)
+- Information isolation backtesting / Shock simulation (LLM leak)
+- Pseudonymization in NLP (가명화)
+- Multiple hypothesis testing — Bonferroni, FDR
+- Drop-one / Leave-one-out validation (modular backtesting)
+- Calibration measurement — Brier score, ECE (LLM 출력 calibration)
+### §14 정체성 갱신
+ 
+v3.6 핵심 framing 모두 반영 — Cold start + 조건 라이브러리 + 가명화 + 영원한 진화 + ordinal 등급 + 메커니즘→조건 + 신뢰 트레이더 가설 통합
+ 
+### 영향
+ 
+- 조건 라이브러리 v1.0 작성 (Tier 1, ~14개) — 즉시 본인 작업
+- 가명화 모듈 외부 도구 선택 — 즉시 결정 필요
+- 백테스트 환경에 leak defense 필수
+- 가중치 학습은 백테스트 후 (조정 이력 기록)
+- 영상마다 조건 라이브러리 갱신 (영원한 cycle)
+### 다음 검증 사항 (실 데이터 후 결정)
+ 
+§13 v3.6 신규 TBD 9개:
+- Tier 1 조건별 검증 통과 기준
+- 가명화 Level 2의 식별 차단 정확도
+- Leak score 임계값 (0.2 / 0.5 / 0.8)
+- Alpha 할인계수 (0.7 / 0.4)
+- LLM ordinal 등급 → 정량 가중치 변환식
+- 6년 트레이더 발화 → 조건 변환 정확도 검증
+- Drop-one validation 음의 기여 임계값
+- Tier 1 prior 5-10개 명문화
+- Multiple testing 보정 방식 (Bonferroni vs FDR)
+---
+
+
 ## v3.5 — 2026-04-26
 
 **테마: 선반영 + 기대감 해소 메커니즘 명문화 + 5-Group 함정 분류**
