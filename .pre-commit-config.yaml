@@ -1,0 +1,29 @@
+# pre-commit 훅 — 커밋 시 자동 검사. 설치: `make hooks`
+# 방법론 가드레일(docs/CLAUDE.md)은 코드 리뷰로, 여기서는 기계적 품질만.
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-added-large-files
+        args: ["--maxkb=1024"]   # 대용량 데이터 커밋 방지 (marcap 등은 clone)
+      - id: check-merge-conflict
+      - id: detect-private-key    # 비밀키 커밋 차단
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.9
+    hooks:
+      - id: ruff
+        args: ["--fix"]
+      - id: ruff-format
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.11.2
+    hooks:
+      - id: mypy
+        additional_dependencies: ["pandas-stubs", "types-requests"]
+        pass_filenames: false
+        args: ["--config-file=pyproject.toml"]

@@ -94,13 +94,20 @@
 - **링크:** https://github.com/kernc/backtesting.py
 - **레이어:** Layer 4
 - **무엇:** 가장 단순한 백테스트 라이브러리. 빠른 프로토타이핑용.
-- **활용:** 주차 1~2 baseline 만들 때 빠르게.
+- **활용:** 단계 1~2 baseline P&L 대조 oracle. 메인 엔진 ❌ (v3.8)
 - **주의:** Live trading ❌, 멀티에셋 약함 → 결국 vectorbt나 backtrader로 갈아타야
 
-### 추천 조합
-- **빠른 실험 (1주~2주차):** backtesting.py 또는 vectorbt
-- **본격 검증 (3~5주차):** **vectorbt** (속도 + 파라미터 sweep)
-- **실거래 직전 (6주차+):** backtrader 또는 자체 엔진 (look-ahead 방어 확실히)
+### 추천 조합 (v3.8 정정 ⭐)
+
+**결정: 메인 엔진은 자체 엔진 "얇게".** 위 라이브러리는 메인 엔진 ❌.
+
+- **메인 (빌드 단계 2~4):** 자체 엔진 — 매일 유니버스 필터 → 랭킹 → 포트폴리오 실행 하네스만 얇게.
+  저수준 P&L 회계는 pandas/numpy (바퀴 재발명 ❌)
+- **교차검증 oracle:** backtesting.py 또는 vectorbt로 **단순 전략 하나**를 같은 데이터로 돌려 P&L 대조.
+  자체 엔진의 최대 리스크인 **회계 버그를 값싸게 잡는 장치**
+- **look-ahead 방어는 어느 라이브러리도 대신 안 해준다** — 자체 엔진에서 직접 통제
+
+이유: 본 시스템은 cross-sectional 포트폴리오 방식이고, 청산 4-카테고리·Skewness·분위 수익률·조건부(case) 백테스트 등 **비표준 지표가 핵심**이라 라이브러리에 맞추는 비용이 더 크다.
 
 ---
 
@@ -187,7 +194,7 @@
 ### 21. georgezouq/awesome-ai-in-finance
 - **링크:** https://github.com/georgezouq/awesome-ai-in-finance
 - **활용:** **막혔을 때 더 찾아볼 자료 카탈로그.** RL·LLM·전통 ML 전부 망라.
-- **추천 사용법:** 6주 로드맵 진행 중 특정 모듈 막히면 카테고리 검색
+- **추천 사용법:** 빌드 단계 진행 중 특정 모듈 막히면 카테고리 검색
 
 ### 22. adlnlp/FinLLMs
 - **링크:** https://github.com/adlnlp/FinLLMs
@@ -216,7 +223,7 @@
 ### 25. stefan-jansen/machine-learning-for-trading
 - **링크:** https://github.com/stefan-jansen/machine-learning-for-trading
 - **활용:** Marcos López de Prado의 책 *"Advances in Financial Machine Learning"* 의 코드 구현. **백테스트 overfitting, walk-forward, IC 계산** 코드가 다 있음.
-- **추천:** 6주 로드맵 4주차 (검증 단계) 진입 전 일부라도 읽기
+- **추천:** 빌드 단계 4 (통합 검증) 진입 전 일부라도 읽기
 
 ### 26. quantopian/research_public
 - **링크:** https://github.com/quantopian/research_public
@@ -240,16 +247,18 @@
 
 ---
 
-## 6주 로드맵별 사용 권장
+## 시스템 빌드 단계별 사용 권장 (기한 ❌)
 
-| 주차 | 사용할 저장소 |
+| 단계 | 사용할 저장소 |
 |---|---|
-| 1 (데이터) | **pykrx**, koreainvestment/open-trading-api (모의투자 키 받기) |
-| 2 (백테스트 + baseline) | **vectorbt** 또는 backtesting.py |
+| 1 (데이터) | **pykrx** (일별 OHLCV + 수급 + point-in-time 종목 마스터) |
+| 2 (백테스트 + baseline) | **자체 엔진** + backtesting.py/vectorbt는 P&L 대조 oracle로만 |
 | 3 (LLM 신호) | TradingAgents 코드 흡수 (구조만), youtube-transcript-api (별도 패키지) |
-| 4 (통합 백테스트) | vectorbt + 자체 신호 모듈, FinMem 메모리 구조 참고 |
+| 4 (통합 백테스트) | 자체 엔진 + 자체 신호 모듈, FinMem 메모리 구조 참고 |
 | 5 (리스크 + 페이퍼) | yquant 패턴 참고, **KIS 모의투자** |
 | 6 (실거래) | **koreainvestment/open-trading-api** + python-kis |
+
+단계 1~2에는 증권사 API 불필요 (pykrx만으로 충분). KIS는 단계 5~6에서 처음 등장.
 
 ---
 

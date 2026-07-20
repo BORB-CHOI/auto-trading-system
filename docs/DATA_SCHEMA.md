@@ -1,0 +1,50 @@
+# 데이터 스키마
+
+> **상태: 초안.** 가격/시총 부분은 marcap README 기준으로 작성. **실제 데이터 로드·검증(무결성
+> 확인) 후 확정**한다 (ADR-0002 결과). 수급 부분은 소스 미정(ADR-0002)이라 TBD.
+
+## 1. 가격/시총 패널 — `FinanceData/marcap`
+
+일별 전종목 스냅샷. `Date`를 인덱스로, 그날 상장돼 있던 모든 종목이 한 행씩. **상장폐지 종목은
+상폐 전까지 자기 날짜에 존재** → point-in-time universe + survivorship 제거를 데이터가 보장.
+
+| 컬럼 | 의미 | 타입 | 백테스트 용도 |
+|------|------|------|--------------|
+| Date | 날짜 (인덱스, DatetimeIndex) | datetime | 시계열 키 |
+| Code | 종목코드 | str(6) | 종목 키 |
+| Name | 종목명 | str | 표시용 (가명화 대상, Phase 2) |
+| Open/High/Low/Close | 시/고/저/종가 | float | 진입가(종가), 변동성 |
+| Volume | 거래량(주) | int | — |
+| **Amount** | **거래대금(원)** | int | **거래대금 z-score(§4.3), 유동성 필터** |
+| Changes | 전일대비 | float | 등락 |
+| ChangeCode | 등락 기호 | str | — |
+| ChagesRatio | 전일대비 등락률(%) | float | 등락률 필터(§4.2) |
+| **Marcap** | **시가총액(백만원)** | int | **시총 필터(1,000억~3조, §4.2)** |
+| **Stocks** | **상장주식수** | int | 유통 규모 |
+| MarketId | 시장기호 | str | — |
+| Market | 시장(KOSPI/KOSDAQ/KONEX) | str | 시장 구분 |
+| Dept | 부서(거래소 소속부) | str | 관리종목 등 힌트 |
+
+**검증할 것 (로드 후, TESTING.md):**
+- 특정 과거 날짜에 이후 상폐된 종목이 실제로 존재하는가 (survivorship).
+- `Marcap ≈ Close × Stocks / 1e6` 정합성 (단위: 백만원).
+- `Amount` 결측/0 처리 정책 (거래정지일).
+- 액면분할/병합 구간의 가격 점프 — 수정주가 여부 확인.
+- `Code` 재사용(상폐 후 코드 재부여) 여부 → 종목 식별 키 안정성.
+
+## 2. 종목 마스터 (point-in-time)
+
+marcap의 날짜별 스냅샷에서 파생. 별도 테이블로 둘지, 패널에서 그때그때 뽑을지는 구현 시 결정.
+필요 필드(안): `Code, Name, Market, 최초등장일, 최종등장일(≈상폐일 근사), 상장상태`.
+
+## 3. 수급 (외인/기관/개인) — **TBD (ADR-0002)**
+
+소스 미정. 유력 후보 KIS `investor-trade-by-stock-daily`. 확정 시 채운다. 예상 필드(안):
+`Date, Code, 외국인_순매수, 기관_순매수, 개인_순매수, (기관 세부 분류)`.
+파생 신호: 외인 5일 누적 순매수 / 시총 (§4.3 Tier 1).
+
+## 저장 규약
+
+- 원본은 커밋하지 않는다 (`data/` `.gitignore`). marcap은 clone, 나머지는 로컬 적재.
+- 중간 산출물은 parquet. 파티션 키는 연도 또는 연·월 (구현 시 결정).
+- 컬럼명은 소스 원본을 유지하되, 오타 컬럼(`ChagesRatio`)은 로더에서 `ChangesRatio`로 정규화.

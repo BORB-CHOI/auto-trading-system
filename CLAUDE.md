@@ -1,0 +1,37 @@
+# CLAUDE.md — 프로젝트 작업 규칙
+
+메인 지침서는 `docs/PROJECT_GUIDELINES.md` (v3.8). 이 파일은 **코드/도구 사용 규칙**만 담는다.
+
+## MCP 사용 규칙 (타협 불가)
+
+- **MCP는 개발 보조로만 쓴다. 매매 실행 경로(주문·포지션·자금 이동)에 절대 넣지 않는다.**
+- 허용: API 문서 검색, 코드 생성 보조, 이슈 관리(Linear 등), 데이터 탐색.
+  - 예) KIS Code Assistant MCP = 개발 시점 API 검색 도구로만 OK.
+- 금지: LLM/MCP가 BUY/SELL·포지션 크기·손절 라인을 결정하거나 주문을 전송하는 것.
+  - `migusdn/KIS_MCP_Server` 등 **조회·주문을 수행하는 서드파티 KIS MCP는 실행 경로에 연결 ❌.**
+- 근거: `PROJECT_GUIDELINES.md` §3.1(Layer 3 매매 = 결정론적 룰), §3.2(LLM은 ordinal 등급까지만),
+  README "Group A 함정 #1(잘못된 도구 사용)". 매매 실행은 항상 결정론적 코드가 한다.
+
+## 확정된 기술 결정 (v3.8)
+
+- **데이터 범위 = 최소**: 일별 OHLCV + 거래대금 + 시가총액/상장주식수 + point-in-time 종목 마스터(상폐 포함).
+  뉴스·공시·유튜브는 Backtest Phase 2(LLM 도입) 때 추가.
+- **가격/시총 데이터 소스**: `FinanceData/marcap` (1995~현재, parquet, 상폐 종목 포함) 우선 검토.
+  pykrx 웹 스크래핑은 KRX 로그인 게이트로 깨진 상태 — 신규 의존 ❌.
+- **수급(외인/기관/개인) 데이터**: 미확정(ADR-0002). 직접 계산 불가(거래소 집계 정보). KIS API 후보.
+- **백테스트 엔진 = 자체 "얇게"**. vectorbt/backtesting.py는 P&L 대조 oracle로만. 메인 엔진 ❌.
+- **주문 창구 = KIS(한국투자증권)**, 단계 5는 KIS 무료 모의투자. 단계 6 전까지 실계좌 자금 이동 ❌.
+
+## 방법론 가드레일 (백테스트 무효화 방지)
+
+- Point-in-time universe + survivorship bias 제거(상폐 종목 포함), 데이터 2017-01~현재.
+- Look-ahead 금지. 종가 진입의 구조적 look-ahead는 ADR로 처리 방식 확정 후 진행.
+- 3분할 Train/Validate/Test, Test는 단 1회. 파라미터 튜닝은 Validate까지만.
+- 신호 채택: 단순 alpha 합산 ❌, drop-one marginal contribution ⭕. WRL과 IC는 별개 지표. N<30 신뢰 불가.
+- 모든 정량 임계값은 placeholder. 하드코딩 ❌. 거래비용·슬리피지 처음부터 포함.
+
+## 작업 규칙
+
+- 큰 삭제·구조 변경 전 확인. 기존 디테일·근거는 의심스러우면 보존.
+- "~한 거 맞지?" 점검에 자동 yes 금지. 실제 확인 후 답하고, 누락·오류는 인정.
+- 한국어로 응답.

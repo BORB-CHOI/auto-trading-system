@@ -10,6 +10,7 @@ kis_token.json
 kis_credentials.*
 
 # 데이터 파일 (대용량, 외부 재현 가능)
+data/           # marcap clone, 적재 데이터 전부 (ADR-0002)
 *.db
 *.sqlite
 *.sqlite3
