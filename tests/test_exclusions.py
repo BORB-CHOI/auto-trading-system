@@ -1,4 +1,4 @@
-"""유니버스 제외 규칙 (ADR-0003).
+"""거래 대상이 아닌 종목 빼기 (ADR-0003).
 
 식별 규칙은 종목명 정규식이라 오탐이 나기 쉽다. 실측에서 실제로 걸렸던
 케이스를 회귀 테스트로 박아둔다 — 규칙을 손댈 때 이게 깨지면 되돌린다.
@@ -9,7 +9,7 @@ from __future__ import annotations
 import pandas as pd
 import pytest
 
-from src.layer1_data.universe import (
+from src.layer1_data.exclusions import (
     DEFAULT_POLICY,
     ExclusionPolicy,
     apply_exclusions,
@@ -19,6 +19,7 @@ from src.layer1_data.universe import (
     is_preferred,
     is_reit,
     is_spac,
+    is_watchlisted,
 )
 
 
@@ -135,3 +136,33 @@ def test_정상_기업명은_스팩_리츠에_안_걸린다(name: str) -> None:
     df = frame([("000000", name, "KOSPI")])
     assert not is_spac(df).any()
     assert not is_reit(df).any()
+
+
+# ── 관리종목 (Dept 기반) ──
+
+
+def frame_dept(rows: list[tuple[str, str, str, str]]) -> pd.DataFrame:
+    return pd.DataFrame(rows, columns=["Code", "Name", "Market", "Dept"])
+
+
+def test_관리종목은_Dept로_가른다() -> None:
+    """실전에서 진입이 제약되므로, 백테스트에서 사면 실현 불가능한 수익이 된다."""
+    df = frame_dept(
+        [
+            ("005930", "삼성전자", "KOSPI", "우량기업부"),
+            ("111111", "관리대상", "KOSDAQ", "관리종목(소속부없음)"),
+            ("222222", "환기대상", "KOSDAQ", "투자주의환기종목(소속부없음)"),
+        ]
+    )
+    assert is_watchlisted(df).tolist() == [False, True, True]
+
+
+def test_Dept_컬럼이_없어도_죽지_않는다() -> None:
+    df = frame([("005930", "삼성전자", "KOSPI")])
+    assert not is_watchlisted(df).any()
+    assert not exclusion_mask(df).any()
+
+
+def test_스팩은_이름이_특이해도_Dept로_잡는다() -> None:
+    df = frame_dept([("999999", "이름이특이한회사", "KOSDAQ", "SPAC(소속부없음)")])
+    assert is_spac(df).all()

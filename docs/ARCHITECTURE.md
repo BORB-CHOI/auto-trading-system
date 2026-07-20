@@ -23,10 +23,16 @@ src/
 
 ```
 marcap (parquet)
-  │  layer1: 로드 + point-in-time universe (상폐 포함)
+  │  layer1: 로드(코드 6자리 정규화) + 상폐 종목 보존
   ▼
-일별 전종목 패널 (date × symbol × [OHLCV, Amount, Marcap, Stocks])
-  │  layer3: universe filter (§4.2) → 신호 계산 (§4.3 Tier 1)
+일별 전종목 패널 (date × symbol × [OHLCV, Amount, Marcap, Stocks, Dept])
+  │  layer1: 거래 대상 아닌 종목 빼기 — exclusions.py (ADR-0003)
+  │          스팩·KONEX·우선주·리츠·관리종목. 전략 무관하게 항상 참.
+  ▼
+거래 가능 종목 패널
+  │  layer3: 전략 조건으로 추리기 — screening.py (§4.2)
+  │          거래대금·시총·등락률. 튜닝 대상 = 전략 그 자체.
+  │          → 신호 계산 (§4.3 Tier 1)
   ▼
 일별 후보 + 신호 점수
   │  layer4: 진입(종가, ADR-0001) → 포지션 관리 → 청산 → 거래비용

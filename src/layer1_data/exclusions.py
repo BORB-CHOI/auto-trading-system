@@ -1,4 +1,10 @@
-"""백테스트 유니버스 구성 — 특수 종목 제외 (ADR-0003).
+"""거래 대상이 아닌 종목 빼기 (ADR-0003).
+
+**"애초에 거래 대상이 아닌 것"만 여기서 뺀다.** 전략과 무관하게 항상 참인 규칙이다.
+스팩·KONEX·우선주·리츠는 전략을 어떻게 바꾸든 대상이 아니다.
+
+거래대금·시총 같은 **전략 조건은 여기가 아니라 layer3**(`screening.py`)이다.
+그쪽은 튜닝하면서 계속 바뀌고, 이쪽은 거의 안 바뀐다.
 
 제외 규칙은 전부 설정값(`ExclusionPolicy`)으로 뺀다. CLAUDE.md:
 "모든 정량 임계값은 placeholder. 하드코딩 ❌."
@@ -16,7 +22,12 @@ import pandas as pd
 # ─────────────────────────────────────────────────────────────
 
 # "미래에셋비전스팩7호", "KB제33호스팩". '아스팩오일'(정상 기업)이 걸리면 안 된다.
+# Dept == "SPAC(소속부없음)" 이 더 정확하나, Dept 결측 행이 있어 이름 규칙과 OR 로 쓴다.
 SPAC_PATTERN = r"스팩\s?\d*\s?호?$|제\d+호\s?스팩"
+
+# 거래소가 Dept 에 직접 표시하는 상태값. 이름 추측보다 정확하다.
+DEPT_SPAC = "SPAC(소속부없음)"
+DEPT_WATCH = ("관리종목(소속부없음)", "투자주의환기종목(소속부없음)")
 
 # "롯데리츠", "SK리츠". '메리츠화재/메리츠증권/메리츠금융지주'가 걸리면 안 된다.
 REIT_PATTERN = r"(?<!메)리츠"
@@ -49,6 +60,10 @@ class ExclusionPolicy:
     # 부동산 임대수익 구조라 §3.9.x 재료 5축 분해가 맞지 않는다.
     exclude_reit: bool = True
 
+    # 관리종목·투자주의환기종목. 거래소가 Dept 에 표시한다.
+    # 실전에서 진입이 제약되므로 백테스트에서 사면 실현 불가능한 수익이 된다.
+    exclude_watchlisted: bool = True
+
 
 DEFAULT_POLICY = ExclusionPolicy()
 
@@ -58,7 +73,17 @@ def is_konex(df: pd.DataFrame) -> pd.Series:
 
 
 def is_spac(df: pd.DataFrame) -> pd.Series:
-    return df["Name"].str.contains(SPAC_PATTERN, regex=True, na=False)
+    by_name = df["Name"].str.contains(SPAC_PATTERN, regex=True, na=False)
+    if "Dept" not in df.columns:
+        return by_name
+    return by_name | (df["Dept"] == DEPT_SPAC)
+
+
+def is_watchlisted(df: pd.DataFrame) -> pd.Series:
+    """관리종목·투자주의환기종목. Dept 컬럼이 없으면 판정하지 않는다."""
+    if "Dept" not in df.columns:
+        return pd.Series(False, index=df.index)
+    return df["Dept"].isin(DEPT_WATCH)
 
 
 def is_preferred(df: pd.DataFrame) -> pd.Series:
@@ -80,6 +105,8 @@ def exclusion_mask(df: pd.DataFrame, policy: ExclusionPolicy = DEFAULT_POLICY) -
         mask |= is_preferred(df)
     if policy.exclude_reit:
         mask |= is_reit(df)
+    if policy.exclude_watchlisted:
+        mask |= is_watchlisted(df)
     return mask
 
 
@@ -98,6 +125,7 @@ def exclusion_report(df: pd.DataFrame, policy: ExclusionPolicy = DEFAULT_POLICY)
         "스팩": (policy.exclude_spac, is_spac),
         "우선주": (policy.exclude_preferred, is_preferred),
         "리츠": (policy.exclude_reit, is_reit),
+        "관리종목": (policy.exclude_watchlisted, is_watchlisted),
     }
     rows = [
         {"rule": name, "enabled": on, "codes": int(df.loc[fn(df), "Code"].nunique())}
