@@ -17,3 +17,4 @@
 |-----|------|------|
 | [0001](0001-close-entry-lookahead.md) | 종가 진입의 look-ahead 처리 | 제안 (오너 입력 대기) |
 | [0002](0002-data-source.md) | 데이터 소스 (가격/시총 = marcap, 수급 = 미정) | 부분 수락 / 수급 미정 |
+| [0003](0003-universe-exclusions.md) | 유니버스 제외 종목 (KONEX·스팩·우선주·리츠) | 수락 |

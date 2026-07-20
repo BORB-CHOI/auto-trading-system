@@ -27,7 +27,7 @@ MARCAP_RTOL = 1e-6
 
 
 def load_years(start: int, end: int, marcap_dir: Path = MARCAP_DIR) -> pd.DataFrame:
-    """연도별 parquet을 읽어 하나로 합친다. end 포함."""
+    """연도별 parquet을 읽어 하나로 합친다. end 포함. 종목코드는 6자리로 맞춘다."""
     frames = []
     for year in range(start, end + 1):
         path = marcap_dir / f"marcap-{year}.parquet"
@@ -36,7 +36,19 @@ def load_years(start: int, end: int, marcap_dir: Path = MARCAP_DIR) -> pd.DataFr
         frames.append(pd.read_parquet(path))
     if not frames:
         raise FileNotFoundError(f"{marcap_dir} 에 {start}~{end} parquet 없음")
-    return pd.concat(frames, ignore_index=True)
+    df = pd.concat(frames, ignore_index=True)
+    df["Code"] = normalize_code(df["Code"])
+    return df
+
+
+def normalize_code(code: pd.Series) -> pd.Series:
+    """종목코드를 6자리로 통일한다 (앞자리 0 복원).
+
+    marcap은 2000-05-29 이전 코드를 숫자로 저장해 앞자리 0이 날아가 있다
+    (삼성전자 005930 → "5930"). 그대로 두면 6자리 체계로 바뀌는 2000-05-29에
+    1,460개 종목이 한꺼번에 "상장폐지"된 것처럼 보인다 — 실제로는 코드만 바뀐 것.
+    """
+    return code.str.zfill(6)
 
 
 def available_years(marcap_dir: Path = MARCAP_DIR) -> list[int]:

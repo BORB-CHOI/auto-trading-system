@@ -54,6 +54,24 @@ def test_망한_회사도_데이터에_남아있다(df: pd.DataFrame) -> None:
     assert len(covered) >= 7, f"상폐가 일부 연도에만 존재: {sorted(per_year.index)}"
 
 
+def test_종목코드는_항상_6자리다() -> None:
+    """marcap은 2000-05-29 이전 코드를 숫자로 저장해 앞자리 0이 날아가 있다.
+
+    보정하지 않으면 6자리 체계로 바뀌는 2000-05-29에 1,460개 종목이 한꺼번에
+    "상장폐지"된 것처럼 보인다 (실제로는 코드만 바뀜). load_years 가 복원한다.
+    """
+    old = load_years(1999, 2000)
+    assert (old["Code"].str.len() == 6).all()
+    assert "005930" in set(old["Code"])  # 삼성전자, 보정 전에는 "5930"
+
+
+def test_코드체계_변경이_상폐로_잡히지_않는다() -> None:
+    """2000-05-29 코드 개편일에 대량 상폐가 잡히면 보정이 깨진 것."""
+    ev = find_delisted(load_years(1999, 2001))
+    on_switch = (ev.samples["last_date"] == pd.Timestamp("2000-05-26")).sum()
+    assert on_switch < 50, f"코드 개편일에 {on_switch}개 소멸 — zfill 보정 확인 필요"
+
+
 def test_marcap_equals_close_times_stocks(df: pd.DataFrame) -> None:
     """시총 = 종가 × 상장주식수. 어긋나면 시총 기반 universe filter를 믿을 수 없다."""
     assert check_marcap_consistency(df).empty
