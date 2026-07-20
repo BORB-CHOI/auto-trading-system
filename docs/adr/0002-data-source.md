@@ -10,7 +10,9 @@
 일별 OHLCV + 거래대금 + 시총/상장주식수 + point-in-time 종목 마스터(상폐 포함) + 수급(외인/기관/개인).
 
 핵심 제약(CLAUDE.md, 타협 불가):
-- **Survivorship bias 제거** — 상장폐지 종목이 자기 시절 데이터에 남아 있어야 함.
+- **망한 회사도 데이터에 남아 있어야 함** — 상장폐지 종목이 자기 시절 데이터에 그대로 있어야 한다.
+  빼면 "망한 종목은 처음부터 안 샀다"는 백테스트가 되어 수익률이 부풀려진다
+  (= 살아남은 것만 보는 착시, survivorship bias).
 - **Point-in-time universe** — 각 시점에 실제 상장·거래되던 종목만.
 - 2017-01 ~ 현재 (초기 백테스트 구간).
 
@@ -29,7 +31,7 @@
 **A. FinanceData/marcap (채택)**
 - GitHub 공개 데이터셋, 1995~현재, 일별, parquet, 1천만+ 행, 매일 갱신.
 - 컬럼: Open/High/Low/Close/Volume/**Amount(거래대금)**/**Marcap(시총)**/**Stocks(상장주식수)**/Rank/Market/Name/Changes/Code.
-- **날짜별 전종목 스냅샷** 구조 → 상폐 종목이 자기 시절에 그대로 존재 = survivorship + point-in-time 자동 해결.
+- **날짜별 전종목 스냅샷** 구조 → 상폐 종목이 자기 시절에 그대로 존재 = 위 두 제약이 자동 해결.
 - 조달 = `git clone` 1회(약 3.4GB). API 콜 폭발 없음.
 - 리스크: 서드파티 데이터셋(정합성은 우리가 검증), 용량.
 

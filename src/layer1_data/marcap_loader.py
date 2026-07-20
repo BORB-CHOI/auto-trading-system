@@ -1,7 +1,12 @@
 """marcap 데이터셋 로드 + 무결성 검증 (ADR-0002).
 
-marcap = 날짜별 전종목 스냅샷. 상장폐지 종목이 자기 시절 행에 그대로 남아 있어
-survivorship bias / point-in-time universe가 구조적으로 해결된다 — 는 것이 채택 근거였다.
+marcap = 날짜별 전종목 스냅샷.
+
+핵심: 망해서 상장폐지된 회사도 자기 시절 행에 그대로 남아 있다.
+지금 살아있는 종목만 모은 데이터로 백테스트를 하면 "망한 회사는 처음부터 안 샀다"는
+뜻이 되어 수익률이 실제보다 부풀려진다 (= 살아남은 것만 보는 착시, survivorship bias).
+같은 이유로 각 시점에 실제 거래되던 종목만 보이는 것도 중요하다 (point-in-time universe).
+
 이 모듈은 그 전제가 실제로 성립하는지 검증한다. 성립하지 않으면 ADR-0002를 다시 연다.
 """
 
@@ -40,7 +45,7 @@ def available_years(marcap_dir: Path = MARCAP_DIR) -> list[int]:
 
 @dataclass
 class DelistingEvidence:
-    """상장폐지 흔적 — 어느 시점에 존재했다가 이후 사라진 종목."""
+    """망해서 사라진 회사의 흔적 — 어느 시점엔 있었는데 이후 사라진 종목."""
 
     total_codes: int
     survivors: int  # 마지막 날짜에도 살아있는 종목
@@ -49,10 +54,10 @@ class DelistingEvidence:
 
 
 def find_delisted(df: pd.DataFrame) -> DelistingEvidence:
-    """마지막 거래일 이전에 사라진 종목을 찾는다.
+    """마지막 거래일 이전에 사라진 종목을 찾는다 = 망한 회사가 데이터에 남아 있는지 확인.
 
-    survivorship bias가 제거된 데이터라면 disappeared > 0 이어야 한다.
-    0이면 살아남은 종목만 담긴 데이터라는 뜻 = 백테스트 무효.
+    disappeared > 0 이어야 한다. 0이면 지금 살아있는 종목만 담긴 데이터라는 뜻이고,
+    그런 데이터로 낸 백테스트 수익률은 전부 부풀려져 있어 쓸 수 없다.
     """
     last_date = df["Date"].max()
     last_seen = df.groupby("Code")["Date"].max()

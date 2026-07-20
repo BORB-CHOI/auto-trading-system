@@ -37,13 +37,16 @@ def test_covers_backtest_window(df: pd.DataFrame) -> None:
     assert df["Date"].max() >= pd.Timestamp("2026-01-01")
 
 
-def test_survivorship_bias_removed(df: pd.DataFrame) -> None:
+def test_망한_회사도_데이터에_남아있다(df: pd.DataFrame) -> None:
     """상폐 종목이 자기 시절 데이터에 남아 있어야 한다 — ADR-0002 채택의 핵심 전제.
 
-    이게 깨지면 백테스트 수익률이 전부 과대평가된다. ADR-0002를 다시 열어야 한다.
+    없으면 "망한 회사는 처음부터 안 샀다"는 백테스트가 되어 수익률이 전부 부풀려진다.
+    (= 살아남은 것만 보는 착시, survivorship bias)
     """
     ev = find_delisted(df)
-    assert ev.disappeared > 0, "사라진 종목이 없다 = 생존 종목만 담긴 데이터 = 백테스트 무효"
+    assert ev.disappeared > 0, (
+        "사라진 종목이 없다 = 지금 살아있는 종목만 담긴 데이터 = 백테스트 무효"
+    )
 
     # 연도마다 고르게 있어야 한다. 특정 연도만 있으면 부분 수집을 의심.
     per_year = ev.samples["last_date"].dt.year.value_counts()

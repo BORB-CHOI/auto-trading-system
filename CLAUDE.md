@@ -24,7 +24,9 @@
 
 ## 방법론 가드레일 (백테스트 무효화 방지)
 
-- Point-in-time universe + survivorship bias 제거(상폐 종목 포함), 데이터 2017-01~현재.
+- **망한 회사도 데이터에 남긴다**(상폐 종목 포함) — 빼면 백테스트 수익률이 부풀려진다
+  (= 살아남은 것만 보는 착시, survivorship bias).
+- 각 시점에 실제 거래되던 종목만 본다(point-in-time universe). 데이터 2017-01~현재.
 - Look-ahead 금지. 종가 진입의 구조적 look-ahead는 ADR로 처리 방식 확정 후 진행.
 - 3분할 Train/Validate/Test, Test는 단 1회. 파라미터 튜닝은 Validate까지만.
 - 신호 채택: 단순 alpha 합산 ❌, drop-one marginal contribution ⭕. WRL과 IC는 별개 지표. N<30 신뢰 불가.
