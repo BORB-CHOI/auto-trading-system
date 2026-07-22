@@ -39,7 +39,7 @@ def test_candles_samsung_shape() -> None:
     j = r.json()
     assert j["name"] == "삼성전자"
     assert j["count"] > 0
-    assert set(j["candles"][0]) == {"time", "open", "high", "low", "close", "volume"}
+    assert set(j["candles"][0]) == {"time", "open", "high", "low", "close", "volume", "amount"}
     # 날짜 오름차순이어야 차트가 제대로 그려진다.
     times = [c["time"] for c in j["candles"]]
     assert times == sorted(times)

@@ -26,7 +26,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.layer1_data.marcap_loader import available_years, load_years
 
 # 차트에 필요한 최소 컬럼만 캐시에 담는다(메모리 절약).
-_CANDLE_COLS = ["Date", "Code", "Name", "Open", "High", "Low", "Close", "Volume"]
+# Amount(거래대금)는 KLineChart 의 turnover 로 넘겨 '거래대금' 보조지표에 쓴다.
+_CANDLE_COLS = ["Date", "Code", "Name", "Open", "High", "Low", "Close", "Volume", "Amount"]
 
 app = FastAPI(title="ATS 케이스 검사기 API", version="0.1.0")
 
@@ -73,10 +74,39 @@ def get_candles(code: str, start: str | None, end: str | None) -> pd.DataFrame:
     return df.dropna(subset=["Open", "High", "Low", "Close"]).sort_values("Date")
 
 
+@lru_cache(maxsize=1)
+def _symbol_master() -> pd.DataFrame:
+    """종목 검색용 마스터 — 가장 최근 연도에서 종목별 최신 이름·시장."""
+    years = available_years()
+    if not years:
+        return pd.DataFrame(columns=["Code", "Name", "Market"])
+    df = load_years(years[-1], years[-1])
+    df = df.sort_values("Date").drop_duplicates("Code", keep="last")
+    return df[["Code", "Name", "Market"]].reset_index(drop=True)
+
+
 @app.get("/api/health")
 def health() -> dict:
     years = available_years()
     return {"ok": True, "years": years}
+
+
+@app.get("/api/symbols")
+def api_symbols(q: str = Query("", description="코드 접두 또는 이름 부분검색")) -> dict:
+    """Pro 심볼 검색용. 코드 앞자리 또는 이름 일부로 최대 30개."""
+    m = _symbol_master()
+    query = q.strip()
+    if query:
+        by_code = m["Code"].str.startswith(query)
+        by_name = m["Name"].str.contains(query, case=False, na=False, regex=False)
+        m = m[by_code | by_name]
+    m = m.head(30)
+    return {
+        "symbols": [
+            {"ticker": code, "name": name, "market": market}
+            for code, name, market in zip(m["Code"], m["Name"], m["Market"], strict=True)
+        ]
+    }
 
 
 @app.get("/api/candles")
@@ -100,9 +130,17 @@ def api_candles(
             "low": float(low),
             "close": float(c),
             "volume": float(v),
+            "amount": float(a),  # 거래대금(원)
         }
-        for t, o, h, low, c, v in zip(
-            times, df["Open"], df["High"], df["Low"], df["Close"], df["Volume"], strict=True
+        for t, o, h, low, c, v, a in zip(
+            times,
+            df["Open"],
+            df["High"],
+            df["Low"],
+            df["Close"],
+            df["Volume"],
+            df["Amount"],
+            strict=True,
         )
     ]
     return {
