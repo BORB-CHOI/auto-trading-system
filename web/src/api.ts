@@ -7,7 +7,8 @@ export type Candle = {
   high: number
   low: number
   close: number
-  volume: number
+  volume: number // 거래량(주)
+  amount: number // 거래대금(원) → KLineChart turnover
 }
 
 export type CandlesResponse = {
