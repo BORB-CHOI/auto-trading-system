@@ -85,3 +85,9 @@ llm_cache/
 tmp/
 temp/
 .tmp/
+
+# 프런트엔드 (web/ — 케이스 검사기, ADR-0005)
+node_modules/
+web/dist/
+web/node_modules/
+*.tsbuildinfo
