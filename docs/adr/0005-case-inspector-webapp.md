@@ -32,9 +32,12 @@
 
 **B 채택.** `web/`(Vite+React+TS) + `api/`(FastAPI). 파이썬은 데이터·전략의 정본, 웹은 표현.
 
-- **1단계(완료):** `GET /api/candles?code=&start=&end=` — marcap 일봉을 잘라 JSON.
-  프런트는 lightweight-charts(v4)로 캔들+거래량 렌더. 상승=빨강/하락=파랑(한국 관례).
+- **1단계(완료):** `GET /api/candles`(일봉 JSON, 거래대금 포함) + `GET /api/symbols`(종목 검색).
   `web/vite.config.ts` 가 `/api/*` 를 FastAPI(:8000)로 proxy.
+- **차트 라이브러리 변천:** lightweight-charts → KLineChart core → **KLineChart Pro**(완성형 위젯).
+  Pro 로 지표 메뉴 전체·이평선(기간 편집)·그리기 툴바(피보나치 등)·심볼 검색이 통째로 들어온다.
+  거래대금(turnover)은 커스텀 지표로 등록해 메뉴에 노출. 상승=빨강/하락=파랑, 라이트 테마.
+  **주의:** Pro 0.1.1 은 klinecharts v9 전용이라 klinecharts 를 v9 로 고정한다(Pro 유지 비용).
 - **가드레일 못박기:** 이 서버·프런트는 BUY/SELL·포지션·주문을 하지 않는다. 전략 평가가 붙을 때도
   로직은 파이썬 layer3 에 두고 프런트는 결과만 그린다.
 - **방법론 경계:** 케이스를 눈으로 본 결과는 **가설**이다. 검증이 아니다. 사후확신(이미 결과를 아는
