@@ -59,3 +59,31 @@ def test_unknown_code_returns_404() -> None:
         "/api/candles", params={"code": "000000", "start": "2026-01-01", "end": "2026-02-01"}
     )
     assert r.status_code == 404
+
+
+def _min_overnight_ratio(candles: list[dict]) -> float:
+    closes = [c["close"] for c in candles]
+    return min(b / a for a, b in zip(closes[:-1], closes[1:], strict=False))
+
+
+def test_split_adjustment_removes_cliff() -> None:
+    """삼성전자 2018-05-04 50:1 분할이 보정으로 연속이 된다(ADR-0006)."""
+    params = {"code": "005930", "start": "2018-04-30", "end": "2018-05-08"}
+    raw = client.get("/api/candles", params={**params, "adjust": "false"}).json()
+    adj = client.get("/api/candles", params={**params, "adjust": "true"}).json()
+
+    # 원주가엔 분할 절벽(하루 -98%), 보정하면 연속.
+    assert _min_overnight_ratio(raw["candles"]) < 0.1
+    assert _min_overnight_ratio(adj["candles"]) > 0.8
+    # 분할 전 보정가 ≈ 원주가 / 50
+    assert abs(adj["candles"][0]["close"] - raw["candles"][0]["close"] / 50) < 1.0
+
+
+def test_recent_window_unchanged_by_adjust() -> None:
+    """분할 없는 최근 구간은 보정해도 원주가와 같다."""
+    params = {"code": "005930", "start": "2026-07-01", "end": "2026-07-16"}
+    raw = client.get("/api/candles", params={**params, "adjust": "false"}).json()
+    adj = client.get("/api/candles", params={**params, "adjust": "true"}).json()
+    raw_c = [round(c["close"], 2) for c in raw["candles"]]
+    adj_c = [round(c["close"], 2) for c in adj["candles"]]
+    assert raw_c == adj_c
