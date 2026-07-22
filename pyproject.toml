@@ -28,6 +28,12 @@ dev = [
 oracle = [
     "backtesting>=0.3",
 ]
+# 케이스 검사기 웹 도구 백엔드 (ADR-0005). 데이터를 프런트로 내주기만 한다 — 매매 판단 ❌.
+webapp = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "httpx>=0.27",     # TestClient (api 테스트)
+]
 
 [build-system]
 requires = ["hatchling"]

@@ -18,3 +18,5 @@
 | [0001](0001-close-entry-lookahead.md) | 종가 진입의 look-ahead 처리 | 제안 (오너 입력 대기) |
 | [0002](0002-data-source.md) | 데이터 소스 (가격/시총 = marcap, 수급 = 미정) | 부분 수락 / 수급 미정 |
 | [0003](0003-universe-exclusions.md) | 유니버스 제외 종목 (KONEX·스팩·우선주·리츠) | 수락 |
+| [0004](0004-transaction-costs.md) | 거래비용·슬리피지 모델 (§6.4 정액률 다단계) | 수락 (정액률만 / 슬리피지 곡선 미해결) |
+| [0005](0005-case-inspector-webapp.md) | 케이스 검사기 웹 도구 (Vite+React / FastAPI) | 수락 (1단계 차트 완료) |
